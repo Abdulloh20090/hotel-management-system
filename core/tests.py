@@ -7,7 +7,6 @@ from .models import Guest, Room
 
 class HotelManagementTests(TestCase):
     def setUp(self):
-        # Har bir test uchun migratsiya orqali kelgan demo yozuvlardan alohida toza holat.
         Room.objects.all().delete()
         Guest.objects.all().delete()
         self.user = get_user_model().objects.create_user(username="operator", password="Strong-test-123")
@@ -53,9 +52,12 @@ class HotelManagementTests(TestCase):
         self.client.post(reverse("guest_delete", args=[guest.pk]))
         self.assertFalse(Guest.objects.filter(pk=guest.pk).exists())
 
-    def test_login_page_and_demo_credentials_are_available_after_migrations(self):
+    def test_login_page_and_no_demo_account_or_records(self):
         response = self.client.get(reverse("login"))
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(get_user_model().objects.filter(username="admin").exists())
-        self.assertTrue(self.client.login(username="admin", password="admin123"))
+        self.assertNotContains(response, "admin123")
+        self.assertFalse(get_user_model().objects.filter(username="admin").exists())
+        self.assertEqual(Room.objects.count(), 0)
+        self.assertEqual(Guest.objects.count(), 0)
+        self.assertTrue(self.client.login(username="operator", password="Strong-test-123"))
         self.assertEqual(self.client.get(reverse("dashboard")).status_code, 200)
